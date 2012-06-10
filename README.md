@@ -1,24 +1,32 @@
 jrj-image-server
 ================
 
-A simple image server that handles dynamic resizing of images for use as a cache origin server
+A simple image server that handles dynamic resizing of images for use as an origin 
+server to a cache like Amazon's CloudFront.
 
 What it does
 ================
-This is a very basic image server, implemented in ColdFusion, which acts as an origin server for a cache. It allows you to quickly and easily resize images based on requests and let the result be cached.
+This is a very basic image server, implemented in ColdFusion, which acts as an origin 
+server for a cache. It allows you to quickly and easily resize images based on requests 
+and let the result be cached.
 
-The image resizing is slow-- this is NOT intended to be run on a front-end web server. The idea is to use as the origin server for a cache-- like, for example, Amazon CloudFront http://aws.amazon.com/cloudfront/  
+The image resizing is slow-- this is NOT intended to be run on a front-end web server. The
+idea is to use as the origin server for a cache-- like, for example, [Amazon CloudFront]
+(http://aws.amazon.com/cloudfront/)
 
-You just bake in an image tag with a source of http://myimagecache.domain.com/resized.cfm/w300/h400/filename.jpg where filename.jpg is the name of an image file in the root, and wXXX and hXXX "directory" names control the height and width.
+You just bake in an image tag with a source of
+http://myimagecache.domain.com/resized.cfm/w300/h400/filename.jpg where filename.jpg 
+is the name of an image file in the root, and **wXXX** and **hXXX** "directory" names
+control the height and width of the resulting image.
 
 Why do I need an image server?
 ==============================
 Compared with most datatypes served by your web server, images are huge... and if your web
 site is like mine, there are a lot of them. They are second only to video in size, but 
 most video these days is served via services like YouTube and Vimeo, so you don't have to
-deal with it. 
+deal with video files very often. 
 
-More importantly, supporting reactive web design means that images must frequently be
+More importantly, supporting *responsive web design* means that images must frequently be
 resized. You'll need thumbnails ad often a couple of additional resolutions/sizes of each
 image to support your application. You can create and store each of these manually, but
 the amount of work involved to do that really adds up. (Quick math problem... if your
@@ -33,7 +41,7 @@ I built jrj-image-server for my old blog-- the idea was that I would store a sin
 high-resolution version of all the images in a folder, but would reference them with a 
 more expressive URL so that an appropriately sized image is returned.
 
-  <img src="http://www.jrj.org/resized.cfm/w600/somepicture.jpg">
+	<img src="http://www.jrj.org/resized.cfm/w600/somepicture.jpg">
 
 This will return the somepicture.jpg file, but will first resize it to a maximum width of
 600 pixels. So even if the original file is a massive, multi-megapixel image, I'll only
@@ -53,6 +61,11 @@ CloudFront will distribute cached copies of the resized images to the "edge" of 
 network, with nodes across a massive global network. This means not only does your server
 have to serve fewer http requests, but your users get much faster, lower-latency response
 from an more geographically proximate edge server. 
+
+Another use for the image server (and the reason I am updating it) is to make it easy
+to serve super-high resolution images to high-DPI displays like the iPad 3 and future
+devices without making your image workflow harder. You are still just creating one image
+and deciding the final output size in your HTML and JavaScript.
 
 Setting up CloudFront for use with jrj-image-server
 ===================================================
@@ -86,6 +99,3 @@ The browser will request that file from CloudFront. If it's already on one of th
 servers the browser will get a really fast response. If it's a URL that's never been
 requested before, then CloudFront will make a request to your origin server, and the 
 result will be cached for future requests. Nice and simple!
->>>>>>> update readme
-
-jrj-image-server
