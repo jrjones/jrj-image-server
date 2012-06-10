@@ -119,3 +119,28 @@ The browser will request that file from CloudFront. If it's already on one of th
 servers the browser will get a really fast response. If it's a URL that's never been
 requested before, then CloudFront will make a request to your origin server, and the 
 result will be cached for future requests. Nice and simple!
+
+What types of image resizing are available?
+===========================================
+We're just relying on the underlying infrastructure here, nothing fancy.
+
+Default is highestQuality (since we're only performing this operation once and caching
+the result) but you can specify any of the following algorithms on the URL:
+
+* highestQuality
+* highQuality
+* mediumQuality
+* highestPerformance
+* highPerformance
+* mediumPerformance
+* nearest
+* bilinear
+* bicubic
+* bessel
+* blackman
+* hamming
+* hanning
+* hermite
+* lanczos
+mitchell
+quadratic
