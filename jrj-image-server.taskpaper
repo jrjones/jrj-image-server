@@ -1,0 +1,20 @@
+jrj-image-server TaskPaper:
+	This is a todo list for jrj-image-server to separate out work items from the git "issues" list. It is best viewed in the excellent TaskPaper for  Mac OS and iOS, but it's really just plain-text and can be manipulated in any text editor. (http://www.hogbaysoftware.com/products/taskpaper)
+
+	Not everything in here will necessarily be a code work item-- I also want to get some documentation and maybe a quick screencast video to make this extremely simple image server easy for people to grok. (It's so simple in its implementation that it's tough to understand why it's so useful!)
+
+	If you are editing this in a text editor, you can mark an item as done by simply appending "@done(YYYY-MM-DD) to the line.
+Features:
+	- optional referrer checking for security (list of approved referrers) to prevent img-SRCing and DoS style attacks @security @p0
+	- 404 Handling - return a properly sized "file not found" image @p1
+	- optional watermarking with text and maybe an image @p3
+	- S3 image store support @p2
+	- Multi-user support @p3
+Documentation:
+	- Get basic wiki structure up on git @doc @p1
+	- Write tutorial on setting up CloudFront to work with image server @doc @p2
+	- Create quick screencast introduction @doc @p3
+Cache Invalidator:
+	- Look into what it would take to add a cache invalidator for CloudFront @p3
+	- Return modified dates based on underlying file to work and play better with caches @p1
+
