@@ -1,5 +1,5 @@
 ﻿<!--- image.cfc
-	copyright 2012, Joseph R. Jones
+	copyright 2012, Joseph R. Jones, Licensed under MIT license.
 	https://github.com/jrjones/jrj-image-server
 	
 	I am a simple component representing an image to be resized

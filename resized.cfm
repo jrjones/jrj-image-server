@@ -1,6 +1,6 @@
 ﻿<!--- 
 	resize.cfm
-	copyright 2012, Joseph R. Jones
+	copyright 2012, Joseph R. Jones, Licensed under MIT license.
 	
 	I accept requests for resized images by parsing the path
 	to figure the file name and height (h) and width (w) values, 

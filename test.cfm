@@ -1,6 +1,6 @@
 ﻿<!---
 	test.cfm
-	Copyright 2012, Joseph R. Jones
+	Copyright 2012, Joseph R. Jones, Licensed under MIT license.
 	
 	I am just a quick visual test of the functionality. I call the image resizer a few times from within html via <img> tags
 --->
