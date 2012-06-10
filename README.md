@@ -11,7 +11,81 @@ The image resizing is slow-- this is NOT intended to be run on a front-end web s
 
 You just bake in an image tag with a source of http://myimagecache.domain.com/resized.cfm/w300/h400/filename.jpg where filename.jpg is the name of an image file in the root, and wXXX and hXXX "directory" names control the height and width.
 
-How to use it
-================
-Still working on some basic documentation, but it's pretty simple stuff. The only files you need are resized.cfm and image.cfc, the rest are just there for testing purposes. 
+Why do I need an image server?
+==============================
+Compared with most datatypes served by your web server, images are huge... and if your web
+site is like mine, there are a lot of them. They are second only to video in size, but 
+most video these days is served via services like YouTube and Vimeo, so you don't have to
+deal with it. 
 
+More importantly, supporting reactive web design means that images must frequently be
+resized. You'll need thumbnails ad often a couple of additional resolutions/sizes of each
+image to support your application. You can create and store each of these manually, but
+the amount of work involved to do that really adds up. (Quick math problem... if your
+site has 100 images, but you need a thumbnail and 3 sizes to support your reactive web
+design, now you're storing 400 images.)
+
+Obviously, you could just use height and width tags in your HTML, but that means you're 
+sending down more data than is needed for the displayed size, which chews through more
+bandwidth (read: cost) and increases load times for your web site.
+
+I built jrj-image-server for my old blog-- the idea was that I would store a single, 
+high-resolution version of all the images in a folder, but would reference them with a 
+more expressive URL so that an appropriately sized image is returned.
+
+  <img src="http://www.jrj.org/resized.cfm/w600/somepicture.jpg">
+
+This will return the somepicture.jpg file, but will first resize it to a maximum width of
+600 pixels. So even if the original file is a massive, multi-megapixel image, I'll only
+send the browser the pixels it needs. (If the original image had a width of 600 pixels
+or less, I'd just send the original image and let the browser scale it.)
+
+The issue with this type of approach, of course, is that resizing images is an expensive
+operation-- you don't want to do this for every request. Enter a caching server.
+
+A cache server-- I use Amazon's excellent and affordable CloudFront server-- will accept
+all of these requests, and cache the result. So when that 600 pixel image is requested
+for the first time it's resized, but CloudFront stores the result so that I never have
+to resize it again. My "origin server" contains all of the original files and the resize
+code, but doesn't have to store any of the resized images. 
+
+CloudFront will distribute cached copies of the resized images to the "edge" of the
+network, with nodes across a massive global network. This means not only does your server
+have to serve fewer http requests, but your users get much faster, lower-latency response
+from an more geographically proximate edge server. 
+
+Setting up CloudFront for use with jrj-image-server
+===================================================
+This system should be compatible with just about any caching service, but since CloudFront
+is so easy and inexpensive to get up and running (and because it's what I'm familiar with)
+I'll provide a brief overview here.
+
+CloudFront is really designed to distribute content stored in Amazon S3 buckets, but it
+works just as well with a non-S3 origin server. 
+
+Go to the [Amazon Web Services management console] (http://aws.amazon.com) and log in.
+
+Click on the "CloudFront" tab, and click on "Create Distribution."
+
+This will provide you with a simple wizard for creating a new CloudFront distribution. All
+you have to do is provide the hostname of your origin server, and select "match viewer" 
+under protocol policy. The rest of the default settings should be fine, though obviously
+you can tweak further for your needs.
+
+Once the disribution is set up, you will get back a hostname to use, something along the 
+lines of XXX.cloudfront.net (where XXX is a random string of letters and numbers.)
+
+You can optionally set up a friendlier CNAME - like, for example, I used to use 
+"image.jrj.org" for my image cache.
+
+Now you just use an image tag like the one below:
+
+	<img src="http://image.jrj.org/resized.cfm/w600/somepicture.jpg">
+
+The browser will request that file from CloudFront. If it's already on one of the edge
+servers the browser will get a really fast response. If it's a URL that's never been
+requested before, then CloudFront will make a request to your origin server, and the 
+result will be cached for future requests. Nice and simple!
+>>>>>>> update readme
+
+jrj-image-server
