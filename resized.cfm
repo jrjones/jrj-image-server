@@ -30,10 +30,6 @@
 <cfparam name="imgParams.filename" default="bridge.jpg">
 <cfparam name="imgParams.resizeType" default="highestQuality">
 
-<cfif not FileExists(imgParams.filename)>
-	<cfthrow message="File not found">
-</cfif>
-
 <!--- the image specified in the filename parameter --->
 <cfset img = new image(#imgParams.filename#)>
 
