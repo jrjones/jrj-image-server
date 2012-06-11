@@ -39,6 +39,11 @@ http://myimagecache.domain.com/resized.cfm/w300/h400/filename.jpg where filename
 is the name of an image file in the root, and **wXXX** and **hXXX** "directory" names
 control the height and width of the resulting image.
 
+Demo Site
+=========
+You can view a live demo here:
+http://image.jrj.org/test.cfm
+
 Why do I need an image server?
 ==============================
 Compared with most datatypes served by your web server, images are huge... and if your web
