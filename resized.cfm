@@ -12,11 +12,11 @@
 
 <cfloop list="#lstPathItems#" index="i">
 	<cfset LenMinus = val(len(i) - 1)>
-	<cfif left(i,1) IS "w"> <!--- path includes a width attribute --->
+	<cfif left(i,1) IS "w" AND NOT i CONTAINS "."> <!--- path includes a width attribute --->
 		<cfset imgParams.width = val(right(i,LenMinus))>
-	<cfelseif left(i,1) IS "h"> <!--- path includes a height attribute --->
+	<cfelseif left(i,1) IS "h" AND NOT i CONTAINS "."> <!--- path includes a height attribute --->
 		<cfset imgParams.height = val(right(i,LenMinus))>
-	<cfelseif left(i,1) IS "r"> <!--- path includes a resize type --->
+	<cfelseif left(i,1) IS "r" AND NOT i CONTAINS "."> <!--- path includes a resize type --->
 		<cfset imgParams.resizeType = right(i,lenMinus)>
 	<cfelseif i CONTAINS "."> <!--- path includes something that looks like a filename --->
 		<cfset imgParams.filename = i>
@@ -29,6 +29,10 @@
 <cfparam name="imgParams.width" default="0">
 <cfparam name="imgParams.filename" default="bridge.jpg">
 <cfparam name="imgParams.resizeType" default="highestQuality">
+
+<cfif not FileExists(imgParams.filename)>
+	<cfthrow message="File not found">
+</cfif>
 
 <!--- the image specified in the filename parameter --->
 <cfset img = new image(#imgParams.filename#)>
