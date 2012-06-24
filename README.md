@@ -4,7 +4,7 @@ jrj-image-server
 A simple image server that handles dynamic resizing of images for use as an origin 
 server to a cache like Amazon's CloudFront.
 
-!![jrj-image-server logo](http://image.jrj.org/resized.cfm/w150/jrj-image-server-logo.png)
+![jrj-image-server logo](http://image.jrj.org/resized.cfm/w150/jrj-image-server-logo.png)
 
 License
 =======
