@@ -4,6 +4,8 @@ jrj-image-server
 A simple image server that handles dynamic resizing of images for use as an origin 
 server to a cache like Amazon's CloudFront.
 
+![jrj-image-server logo](http://image.jrj.org/resized.cfm/w150/jrj-image-server-logo.png)
+
 License
 =======
 Copyright (c) 2012, Joseph R. Jones (jrj.org) Licensed under the MIT License. 
@@ -38,6 +40,11 @@ You just bake in an image tag with a source of
 http://myimagecache.domain.com/resized.cfm/w300/h400/filename.jpg where filename.jpg 
 is the name of an image file in the root, and **wXXX** and **hXXX** "directory" names
 control the height and width of the resulting image.
+
+It will show a file-not-found image if the specified file isn't in the directory, and
+will show a file-not-valid image if the specified file cannot be parsed.
+
+![404 Image](http://image.jrj.org/resized.cfm/w200/file-that-doesnt-exist.jpg)
 
 Demo Site
 =========
