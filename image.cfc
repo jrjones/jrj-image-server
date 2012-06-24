@@ -2,7 +2,7 @@
 	copyright 2012, Joseph R. Jones, Licensed under MIT license.
 	https://github.com/jrjones/jrj-image-server
 	
-	I am a simple component representing an image to be resized
+	I am a simple component representing an image to be resized and cached.
 --->
 
 <cfcomponent>
@@ -22,24 +22,23 @@
 	<cfproperty name="tmpDir" type="string" hint="The current temp directory for files beyond a specified size (smaller images will be performed in ram)" />
 	<cfproperty name="Transparency" type="string" hint="OPAQUE/TRANSPARENT" />
 	
-	<!--- START pseudo-constructor --->	
-	<cfset this.validFormats = "png,png8,png24,jpg,jpeg,gif" />
-	<!--- "png,png8,png24,jpg,jpeg,gif" StructKeyList(application.enum.imageFormats)--->
-	
+	<!--- START pseudo-constructor and configuration --->	
+	<cfset this.validFormats = "png,png8,png24,jpg,jpeg,gif" />	
 	<cfset this.validColorDepths = "24,16,8" />
-	<!---"24,16,8" StructKeyList(application.enum.imageColorDepths) --->
-	
 	<cfset this.validResizeTypes = "highestQuality,lanczos,highquality,mitchell,mediumPerformance,quadratic,mediumquality,hamming,hanning,hermite,highPerformance,blackman,bessel,highestPerformance,nearest,bicubic,bilinear" /> 
-	<!---"highestQuality,lanczos,highquality,mitchell,mediumPerformance, 
-			quadratic,mediumquality,hamming,hanning,hermite,highPerformance,blackman,
-			bessel,highestPerformance,nearest,bicubic,bilinear" StructKeyList(application.enum.imageResizeAlgos) 
-	--->
-	
 	<cfset this.defaultResizeType = "highestQuality" />	
 	<cfset this.gfxDir = GetDirectoryFromPath(GetTemplatePath()) />
 	<cfset this.tmpDir = "#this.gfxDir#/tmp" />
-	<!--- END pseudo-constructor --->
+	<!--- END pseudo-constructor and configuration --->
 
+
+	<!---
+		-----------
+		init method
+		-----------
+		TODO: need to refactor init method with pseudo constructor/configuration
+	    -----------
+	--->
 	<cffunction name="init" returntype="void" access="public">
 		<cfargument name="filename" type="string" required="true" />
 		
@@ -52,30 +51,51 @@
 			<cfthrow message="Only image filetypes (#this.validFormats#) are allowed." />
 		</cfif>
 		
-		<!--- file must exist in this directory - we do not want to enable people to traverse the file system --->
+		<!--- file must exist in this directory - if file does not exist, switch to our 404 error image. --->
 		<cfif fileExists("#GetDirectoryFromPath(GetTemplatePath())#/#arguments.filename#")>
 			<cfset this.filepath = "#GetDirectoryFromPath(GetTemplatePath())#/#arguments.filename#">
 		<cfelse>
-			<cfthrow message="Image file #GetDirectoryFromPath(GetTemplatePath())#/#arguments.filename# does not exist in gfx root." />
+			<cfset this.filepath = "#GetDirectoryFromPath(GetTemplatePath())#/fileNotFound.png">
 		</cfif>
 		
 		<!--- populate this image object based on information from the file --->
-		<cfset ImageInfoStruct = this.GetImageInfoFromFile(this.filepath) />
-		<cfset this.populateImageInfo(ImageInfoStruct) />
+		<cftry>
+			<cfset ImageInfoStruct = this.GetImageInfoFromFile(this.filepath) />
+			<cfset this.populateImageInfo(ImageInfoStruct) />
+			<cfcatch type="any">
+				<!--- if an exception is thrown when trying to handle the image, then switch to our "invalid image file" error image. --->
+				<cfset this.filepath = "#GetDirectoryFromPath(GetTemplatePath())#fileNotValid.png">
+				<cfset ImageInfoStruct = this.GetImageInfoFromFile(this.filepath) />
+				<cfset this.populateImageInfo(ImageInfoStruct) />
+			</cfcatch>
+		</cftry>
+		
+		<!--- If the specified temp directory isn't there, then we need to create it. --->
+		<cfif NOT DirectoryExists(this.tmpDir)>
+			<cfset DirectoryCreate(this.tmpDir)>
+		</cfif>
 		
 		<cfreturn>
 	</cffunction>
 	
-	<cffunction name="Resize" returntype="any" access="public">
-		<cfargument name="filename" type="string" required="true" />
-		<cfargument name="height" type="numeric" required="false" default="0" />
-		<cfargument name="width" type="numeric" required="false" default="0" />
-		<cfargument name="format" type="string" required="false" default="" />
-		<cfargument name="colorDepth" type="string" required="false" default="" />
-		<cfargument name="resizeType" type="string" required="false" default="#application.enums.imageResizeAlgos.highestquality#" />
+	
+	<!---
+		-------------
+		Resize method
+		-------------
+	--->
+	<cffunction name="Resize" returntype="any" access="public" 
+		hint="Resizes the image to the specified width/height, and outputs in the specified format. If values are not passed then then those properties will be retained for the existing image.">
+		
+		<cfargument name="filename" type="string" required="true" hint="The file you wish to resize" />
+		<cfargument name="height" type="numeric" required="false" default="0" hint="The height to resize to" />
+		<cfargument name="width" type="numeric" required="false" default="0" hint="The width to resize to" />
+		<cfargument name="format" type="string" required="false" default="" hint="The format to output" />
+		<cfargument name="colorDepth" type="string" required="false" default="" hint="The color depth you want to output (in bits, must be listed in validColorDepths)" />
+		<cfargument name="resizeType" type="string" required="false" default="highestquality" hint="The algorithm to use when resizing (must be listed in validResizeTypes)" />
 
 		<!--- validate format --->
-		<cfif arguments.format NEQ "" AND not StructKeyExists(application.enum.imageFormats, arguments.format)>
+		<cfif arguments.format NEQ "" AND not ListContainsNoCase(this.validFormats, arguments.format)>
 			<cfthrow message="invalid format specified - #arguments.format#. Allowed formats are #this.validFormats#" />
 		</cfif>
 		
@@ -127,18 +147,24 @@
 			<cfset this.outputWidth = arguments.width />
 		</cfif>
 		
-		<!--- validate filename --->
+		<!--- validate filename, if it doesn't exist then switch to our 404 error image --->
 		<cfif not fileExists("#this.gfxDir#/#arguments.filename#")>
-			<cfthrow message="File #this.gfxdir#/#filename# does not exist. Cannot resize a non-existent image" />
+			<cfset arguments.filename = "fileNotFound.png">
 		</cfif>
 		
 
-		<!--- read in the original image --->		
-		<cfset this.img = ImageRead("#this.gfxdir#/#arguments.filename#")>
-
-		<!--- validate file is image --->
+		<!--- read in the original image --->
+		<cftry>
+			<cfset this.img = ImageRead("#this.gfxdir#/#arguments.filename#")>
+			<cfcatch type="any">
+				<cfset arguments.filename = "fileNotValid.png">
+				<cfset this.img = ImageRead("#this.gfxdir#/#arguments.filename#")>
+			</cfcatch>
+		</cftry>
+		<!--- validate file is image, if not switch to our invalid error image --->
 		<cfif NOT isImage(this.img)>
-			<cfthrow message="#arguments.filename# does not appear to be a valid image file.">
+			<cfset arguments.filename = "fileNotValid.png">
+			<cfset this.img = ImageRead("#this.gfxdir#/#arguments.filename#")>
 		</cfif>
 
 		
@@ -171,7 +197,15 @@
 		</cfif>
 	</cffunction>
 	
-	<cffunction name="GetImageInfoFromFile" access="package" returntype="struct">
+	
+	<!---
+		---------------------------
+		GetImageInfoFromFile method
+		---------------------------
+	--->
+	<cffunction name="GetImageInfoFromFile" access="package" returntype="struct"
+		hint="Gets an image object from the passed file. File must be a supported image format.">
+
 		<cfargument name="filename" type="string" hint="The file you want to inspect" />
 		<cfscript>
 			this.testImg = imageRead(arguments.filename);
@@ -187,6 +221,12 @@
 		</cfscript>
 	</cffunction>
 	
+	
+	<!---
+		------------------------
+		PopulateImageInfo method
+		------------------------
+	--->
 	<cffunction name="populateImageInfo" access="package" returntype="void">
 		<cfargument name="ImageInfoStruct" type="struct" required="true">
 		<cfscript>
@@ -198,9 +238,20 @@
 			return;
 		</cfscript> 
 	</cffunction>
-	
-	<cffunction name="GetMimeType" access="public" returntype="string" hint="Returns the mime type expected for the specified filetype. If no filetype is passed, will specify mime type for this image object.">
-		<cfargument name="filetype" required="false" default="#this.format#" hint="The filetype (jpg,png,gif, etc.) for which you wish to get the mime type... unsupported filetypes will throw an exception. If you do not pass a filetype we will default to the format of this image object.">
+
+
+	<!---
+		------------------
+		GetMimeType method
+		------------------
+		Seems like there should be a built-in function for this, but I couldn't find it.
+	--->
+	<cffunction name="GetMimeType" access="package" returntype="string" 
+		hint="Returns the mime type expected for the specified filetype. If no filetype is passed, will specify mime type for this image object.">
+		
+		<cfargument name="filetype" required="false" default="#this.format#" 
+			hint="The filetype (jpg,png,gif, etc.) for which you wish to get the mime type... unsupported filetypes will throw an exception. If you do not pass a filetype we will default to the format of this image object.">
+		
 		<cfswitch expression="#arguments.filetype#">
 			<cfcase value="gif">
 				<cfreturn "image/gif">
@@ -224,6 +275,26 @@
 				<cfthrow message="Invalid filetype passed to GetMimeType - #arguments.filetype#" />
 			</cfdefaultcase>
 		</cfswitch>
+	</cffunction>
+	
+	<cffunction name="cleanUpTempDirectory" access="package" returntype="void"
+		hint="Removes old files from the temp directory so we don't unnecessarily fill up disk space. Will delete anything older than the configured value in the maxAgeInMinutes argument (default is 1 minute)">
+		<cfargument name="maxAgeInMinutes" type="numeric" default="1" />
+		
+		<cfdirectory action="list" directory="#this.tmpDir#" name="qryFiles" />
+		
+		<cfset dtMaxAllowedToPreserve = DateAdd("n","-#arguments.maxAgeInMinutes#",now())>
+		<!---<cflog text="cleaning up directory #this.tmpDir#..." log="Application" type="Information" />--->		
+		<cfloop query="qryFiles">
+			<cfif DateCompare(qryFiles.dateLastModified,dtMaxAllowedToPreserve) IS "-1">
+				<cffile action="delete" file="#qryFiles.directory#/#qryFiles.name#">
+				<!---<cflog text="...#qryFiles.name# deleted" log="Application" type="Information" />--->
+			<cfelse>
+				<!---<cflog text="...#qryFiles.name# retained" log="Application" type="Information" />--->
+			</cfif>			
+		</cfloop>
+		<cflog text="directory cleanup complete!" />
+		
 	</cffunction>
 	
 </cfcomponent>

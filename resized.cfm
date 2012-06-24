@@ -2,7 +2,7 @@
 	resize.cfm
 	copyright 2012, Joseph R. Jones, Licensed under MIT license.
 	
-	I accept requests for resized images by parsing the path
+	I accept requests for resized images by parsing the query string
 	to figure the file name and height (h) and width (w) values, 
 	and plopping them into a imgParams struct that I can use to 
 	call image.cfc's resize method and respond with the image
@@ -27,14 +27,35 @@
 	
 <cfparam name="imgParams.height" default="0">
 <cfparam name="imgParams.width" default="0">
-<cfparam name="imgParams.filename" default="bridge.jpg">
+<cfparam name="imgParams.filename" default="fileNotFound.png">
 <cfparam name="imgParams.resizeType" default="highestQuality">
 
 <!--- the image specified in the filename parameter --->
 <cfset img = new image(#imgParams.filename#)>
 
+<cfswitch expression="#ListGetAt(imgParams.filename,2,".")#">
+	<cfcase value="jpg">
+		<cfset imgParams.format = "jpg">
+	</cfcase>
+	<cfcase value="jpeg">
+		<cfset imgParams.format = "jpg">
+	</cfcase>
+	<cfcase value="png">
+		<cfset imgParams.format = "png">
+	</cfcase>
+	<cfcase value="gif">
+		<cfset imgParams.format = "png">
+	</cfcase>
+	<cfdefaultcase>
+		<cfset imgParams.format = "png">
+	</cfdefaultcase>
+</cfswitch>
+
 <!--- a resized version of the image --->
-<cfset resizedImg = img.resize(filename=imgParams.filename, height=imgParams.height, width=imgParams.width, resizeType=imgParams.resizeType)>
+<cfset resizedImg = img.resize(filename=imgParams.filename, height=imgParams.height, width=imgParams.width, resizeType=imgParams.resizeType, format=imgParams.format)>
+
+<!--- delete old files to keep the directory from getting too big. --->
+<cfset img.cleanUpTempDirectory()>
 
 <!--- output the resized image in response to the request. --->
 <cffile action="readbinary" file="#resizedImg.source#" variable="resizedFileContent" />
