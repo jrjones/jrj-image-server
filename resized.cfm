@@ -12,14 +12,14 @@
 
 <cfloop list="#lstPathItems#" index="i">
 	<cfset LenMinus = val(len(i) - 1)>
-	<cfif left(i,1) IS "w" AND NOT i CONTAINS "."> <!--- path includes a width attribute --->
+	<cfif i CONTAINS "."> <!--- path includes something that looks like a filename --->
+		<cfset imgParams.filename = i>
+	<cfelseif left(i,1) IS "w" AND NOT i CONTAINS "."> <!--- path includes a width attribute --->
 		<cfset imgParams.width = val(right(i,LenMinus))>
 	<cfelseif left(i,1) IS "h" AND NOT i CONTAINS "."> <!--- path includes a height attribute --->
 		<cfset imgParams.height = val(right(i,LenMinus))>
 	<cfelseif left(i,1) IS "r" AND NOT i CONTAINS "."> <!--- path includes a resize type --->
 		<cfset imgParams.resizeType = right(i,lenMinus)>
-	<cfelseif i CONTAINS "."> <!--- path includes something that looks like a filename --->
-		<cfset imgParams.filename = i>
 	<cfelse>
 		<!--- do nothing, as this chunk of the path doesn't look like an attribute we know about --->
 	</cfif>
@@ -44,7 +44,7 @@
 		<cfset imgParams.format = "png">
 	</cfcase>
 	<cfcase value="gif">
-		<cfset imgParams.format = "png">
+		<cfset imgParams.format = "gif">
 	</cfcase>
 	<cfdefaultcase>
 		<cfset imgParams.format = "png">

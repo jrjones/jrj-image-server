@@ -138,7 +138,7 @@
 		<cfelseif arguments.width IS 0 AND arguments.height NEQ 0>
 			<!--- height was passed with no width - use outputWidth of empty string to constrain aspect ratio --->
 			<cfset this.outputWidth = "" />
-		<cfelseif arguments.width NEQ 0 AND arguments.height IS 0>
+		<cfelseif arguments.width NEQ 0 AND val(arguments.height) IS 0>
 			<!--- with is passed with zero height - use outputHeight of empty string to constrain aspect ratio --->	
 			<cfset this.outputWidth = arguments.width />
 			<cfset this.outputHeight = "" />
@@ -171,13 +171,13 @@
 		<cfif this.outputWidth IS this.width AND this.outputHeight IS this.height>
 			<!--- no size change - output the original image --->
 			<cfreturn img>
-		<cfelseif this.outputWidth IS "" AND this.outputHeight IS "">
+		<cfelseif val(this.outputWidth) IS 0 AND val(this.outputHeight) IS 0>
 			<!--- no size change - output the original image --->
 			<cfreturn img>
 		<cfelse>
 			<!--- Perform Image Resize --->
-			<cfif arguments.height IS 0><cfset arguments.height = ""></cfif>
-			<cfif arguments.width IS 0><cfset arguments.width = ""></cfif>
+			<cfif val(arguments.height) IS 0><cfset arguments.height = ""></cfif>
+			<cfif val(arguments.width) IS 0><cfset arguments.width = ""></cfif>
 			<cfscript>
 				this.sourceImage = this.filepath;
 				this.finfo = getFileInfo(this.sourceImage);
@@ -185,7 +185,7 @@
 				// need to consider if there is a more efficient method than duplicating the image-- doesn't look like this takes up much memory, but worth testing different alternatives.
 				this.newImage = duplicate(this.img);
 				// this is the actual scaling operation
-				imageScaleToFit(this.newImage, arguments.height, arguments.width, arguments.resizeType);
+				imageScaleToFit(this.newImage, arguments.width, arguments.height, arguments.resizeType);
 				// write to tmp file with unique filename
 				tmpfilename = CreateUUID() & "_" & getFileFromPath(this.sourceImage);
 				imageWrite(this.newImage,"#this.tmpDir#/#tmpFileName#",1);
